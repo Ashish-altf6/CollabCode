@@ -1,6 +1,6 @@
 # 🚀 CollabCode 
 
-**CollabCode** is a high-performance, real-time collaborative code editor designed for teams to code together seamlessly from anywhere in the world.
+**CollabCode** is a high-performance, real-time collaborative code editor designed for teams to code together seamlessly from anywhere in the world....
 
 ## 👥 The Team 
 *   **Vinay Kumar** ([@Vinay50029](https://github.com/Vinay50029))
