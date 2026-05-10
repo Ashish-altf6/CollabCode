@@ -29,9 +29,12 @@ function App() {
     // Initialize Yjs
     const doc = new Y.Doc();
     
-    // Connect to the backend WebSocket using the dynamic room ID
+    // Connect to the backend WebSocket
+    // Use the environment variable from Vercel/Render, or fallback to localhost
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'ws://localhost:5001';
+    
     const provider = new WebsocketProvider(
-      'ws://localhost:5001', 
+      backendUrl, 
       `collab-room-${roomId}`, 
       doc
     );
