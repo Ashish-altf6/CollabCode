@@ -10,11 +10,11 @@ export async function createFile(payload) {
   return data.file;
 }
 
-export async function updateFile(id, payload) {
-  const { data } = await api.put(`/files/${id}`, payload);
+export async function updateFile(id, roomId, payload) {
+  const { data } = await api.put(`/files/${id}`, { ...payload, roomId });
   return data.file;
 }
 
-export async function deleteFile(id) {
-  await api.delete(`/files/${id}`);
+export async function deleteFile(id, roomId) {
+  await api.delete(`/files/${id}`, { params: { roomId } });
 }

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.6",
-    "@clerk/react": "^6.6.2",
+    "firebase": "^11.4.0",
     "@monaco-editor/react": "^4.6.0",
     "axios": "^1.7.9",
     "lucide-react": "^0.487.0",

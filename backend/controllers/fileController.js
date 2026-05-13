@@ -1,22 +1,32 @@
-const File = require('../models/File');
-const Room = require('../models/Room');
+const { db } = require('../config/firebaseAdmin');
 
 async function ensureRoom(roomId) {
   if (!roomId || typeof roomId !== 'string') return;
-  await Room.findOneAndUpdate(
-    { roomId },
-    { $setOnInsert: { roomId, name: roomId } },
-    { upsert: true },
-  );
+  const roomRef = db.collection('rooms').doc(roomId);
+  const doc = await roomRef.get();
+  if (!doc.exists) {
+    await roomRef.set({
+      roomId,
+      name: roomId,
+      createdAt: new Date(),
+      collaborators: []
+    });
+  }
 }
 
 async function listFiles(req, res, next) {
   try {
+    if (!db) return res.status(500).json({ message: 'Firebase not initialized' });
     const { roomId } = req.query;
+
     if (!roomId) {
       return res.status(400).json({ message: 'roomId query required' });
     }
-    const files = await File.find({ roomId }).sort({ updatedAt: -1 }).lean();
+    const filesSnapshot = await db.collection('rooms').doc(roomId).collection('files').orderBy('updatedAt', 'desc').get();
+    const files = [];
+    filesSnapshot.forEach(doc => {
+      files.push({ id: doc.id, ...doc.data() });
+    });
     res.json({ files });
   } catch (err) {
     next(err);
@@ -25,40 +35,48 @@ async function listFiles(req, res, next) {
 
 async function createFile(req, res, next) {
   try {
+    if (!db) return res.status(500).json({ message: 'Firebase not initialized' });
     const { roomId, filename, language, content } = req.body;
+
     if (!roomId || !filename) {
       return res.status(400).json({ message: 'roomId and filename required' });
     }
     await ensureRoom(roomId);
-    const file = await File.create({
+    
+    const fileRef = db.collection('rooms').doc(roomId).collection('files').doc();
+    const newFile = {
       roomId,
       filename: String(filename).trim(),
       language: language || 'javascript',
       content: content ?? '',
-    });
-    res.status(201).json({ file });
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    await fileRef.set(newFile);
+    res.status(201).json({ file: { id: fileRef.id, ...newFile } });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ message: 'File already exists in this room' });
-    }
     next(err);
   }
 }
 
 async function updateFile(req, res, next) {
   try {
+    if (!db) return res.status(500).json({ message: 'Firebase not initialized' });
     const { id } = req.params;
-    const { filename, language, content } = req.body;
-    const update = {};
+
+    const { roomId, filename, language, content } = req.body;
+    if (!roomId) return res.status(400).json({ message: 'roomId required' });
+
+    const fileRef = db.collection('rooms').doc(roomId).collection('files').doc(id);
+    const update = { updatedAt: new Date() };
     if (filename !== undefined) update.filename = String(filename).trim();
     if (language !== undefined) update.language = language;
     if (content !== undefined) update.content = content;
 
-    const file = await File.findByIdAndUpdate(id, update, { new: true });
-    if (!file) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-    res.json({ file });
+    await fileRef.update(update);
+    const updatedDoc = await fileRef.get();
+    res.json({ file: { id: updatedDoc.id, ...updatedDoc.data() } });
   } catch (err) {
     next(err);
   }
@@ -67,10 +85,10 @@ async function updateFile(req, res, next) {
 async function deleteFile(req, res, next) {
   try {
     const { id } = req.params;
-    const file = await File.findByIdAndDelete(id);
-    if (!file) {
-      return res.status(404).json({ message: 'File not found' });
-    }
+    const { roomId } = req.query;
+    if (!roomId) return res.status(400).json({ message: 'roomId query required' });
+
+    await db.collection('rooms').doc(roomId).collection('files').doc(id).delete();
     res.json({ ok: true });
   } catch (err) {
     next(err);

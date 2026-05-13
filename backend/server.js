@@ -5,7 +5,6 @@ const express = require('express');
 const cors = require('cors');
 const { Server } = require('socket.io');
 const { YSocketIO } = require('y-socket.io/dist/server');
-const { connectDB } = require('./config/db');
 const routes = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -68,15 +67,25 @@ io.on('connection', (socket) => {
     emitAppRoomCount(io, joinedRoom);
   });
 
-  socket.on('chat:message', (payload) => {
+  socket.on('chat:message', async (payload) => {
     const rid = String(payload?.roomId || '');
     if (!rid || !joinedRoom || rid !== joinedRoom) return;
+    
+    const { db } = require('./config/firebaseAdmin');
+    
     const msg = {
       id: `${socket.id}-${Date.now()}`,
       user: String(payload.user || 'Guest'),
       text: String(payload.text || ''),
       ts: Date.now(),
     };
+
+    try {
+      await db.collection('rooms').doc(rid).collection('messages').add(msg);
+    } catch (err) {
+      console.error('Failed to save message to Firestore:', err.message);
+    }
+
     io.to(`app:${rid}`).emit('chat:message', msg);
   });
 
@@ -91,17 +100,11 @@ io.on('connection', (socket) => {
 
 const PORT = Number(process.env.PORT) || 5001;
 
-async function start() {
-  try {
-    await connectDB();
-    server.listen(PORT, () => {
-      console.log(`API: http://localhost:${PORT}/api`);
-      console.log(`Socket.IO + Yjs namespaces: /yjs|<roomId>`);
-    });
-  } catch (err) {
-    console.error('Failed to start server:', err.message);
-    process.exit(1);
-  }
+function start() {
+  server.listen(PORT, () => {
+    console.log(`API: http://localhost:${PORT}/api`);
+    console.log(`Socket.IO + Yjs namespaces: /yjs|<roomId>`);
+  });
 }
 
 start();

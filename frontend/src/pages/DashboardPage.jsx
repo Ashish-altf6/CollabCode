@@ -16,102 +16,82 @@ import {
   Copy,
 } from 'lucide-react';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
   useUser,
   useClerk,
 } from '@clerk/clerk-react';
 
+import {
+  fetchUserRooms,
+  createRoom,
+  joinRoom,
+  deleteRoom,
+} from '../services/roomsApi';
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('rooms');
-
   const { user } = useUser();
-
   const { signOut } = useClerk();
+  const [recentRooms, setRecentRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [recentRooms, setRecentRooms] = useState(() => {
-    const savedRooms = localStorage.getItem('recentRooms');
+  useEffect(() => {
+    if (user?.id) {
+      loadRooms();
+    }
+  }, [user]);
 
-    return savedRooms ? JSON.parse(savedRooms) : [];
-  });
+  const loadRooms = async () => {
+    try {
+      setLoading(true);
+      const rooms = await fetchUserRooms(user.id);
+      setRecentRooms(rooms);
+    } catch (err) {
+      console.error('Failed to load rooms:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateRoom = async () => {
     const projectName = window.prompt('Enter project name');
-
     if (!projectName?.trim()) return;
 
-    const roomId = Math.random().toString(36).substring(2, 8);
-
-    const roomLink = `${window.location.origin}/editor/${roomId}`;
-
-    const newRoom = {
-      id: roomId,
-      name: projectName,
-      // language: 'React + Tailwind',
-      members: 1,
-      lastActive: 'Just now',
-      link: roomLink,
-    };
-
-    const updatedRooms = [newRoom, ...recentRooms];
-
-    setRecentRooms(updatedRooms);
-
-    localStorage.setItem(
-      'recentRooms',
-      JSON.stringify(updatedRooms)
-    );
-
-    // MONGODB SAVE HERE
-
-    window.location.href = `/editor/${roomId}`;
+    try {
+      const { roomId } = await createRoom(user.id, projectName);
+      window.location.href = `/editor/${roomId}`;
+    } catch (err) {
+      alert('Failed to create room: ' + err.message);
+    }
   };
 
   const handleDeleteRoom = async (roomId) => {
-    const updatedRooms = recentRooms.filter(
-      (room) => room.id !== roomId
-    );
-
-    setRecentRooms(updatedRooms);
-
-    localStorage.setItem(
-      'recentRooms',
-      JSON.stringify(updatedRooms)
-    );
-
-    // MONGODB DELETE HERE
+    if (!window.confirm('Are you sure you want to delete this room?')) return;
+    try {
+      await deleteRoom(roomId, user.id);
+      setRecentRooms(prev => prev.filter(r => r.id !== roomId));
+    } catch (err) {
+      alert('Failed to delete room: ' + err.message);
+    }
   };
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     const roomId = window.prompt('Enter Room ID');
-
     if (!roomId?.trim()) return;
 
-    const updatedRooms = recentRooms.map((room) => {
-      if (room.id === roomId) {
-        return {
-          ...room,
-          members: room.members + 1,
-        };
-      }
-
-      return room;
-    });
-
-    setRecentRooms(updatedRooms);
-
-    localStorage.setItem(
-      'recentRooms',
-      JSON.stringify(updatedRooms)
-    );
-
-    window.location.href = `/editor/${roomId}`;
+    try {
+      await joinRoom(user.id, roomId);
+      window.location.href = `/editor/${roomId}`;
+    } catch (err) {
+      alert('Failed to join room: ' + err.message);
+    }
   };
 
-  const handleCopyRoomLink = async (link) => {
+  const handleCopyRoomLink = async (roomId) => {
+    const link = `${window.location.origin}/editor/${roomId}`;
     await navigator.clipboard.writeText(link);
-
     alert('Room link copied!');
   };
 
