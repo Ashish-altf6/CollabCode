@@ -16,9 +16,15 @@ function corsOrigin(origin, callback) {
   if (!origin) {
     return callback(null, true);
   }
-  const allowed =
-    origin === clientOrigin || /^http:\/\/localhost:\d+$/.test(origin);
-  callback(null, allowed);
+  const isLocalhost = /^http:\/\/localhost:\d+$/.test(origin);
+  const isVercel = origin.endsWith('.vercel.app');
+  const isConfiguredClient = origin === clientOrigin;
+
+  if (isLocalhost || isVercel || isConfiguredClient) {
+    callback(null, true);
+  } else {
+    callback(null, false); // Just deny, don't throw hard error for better logs
+  }
 }
 
 app.use(
