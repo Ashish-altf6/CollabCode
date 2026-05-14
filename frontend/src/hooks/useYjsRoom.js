@@ -41,7 +41,7 @@ export function useYjsRoom(roomId) {
 
     setState({ doc, provider, sources, langs, synced: false });
 
-    const onSynced = ([isSynced]) => {
+    const onSynced = (isSynced) => {
       console.log(`[Yjs] Synced status for ${roomId}:`, isSynced);
       if (!cancelled) {
         setState({ doc, provider, sources, langs, synced: !!isSynced });
