@@ -47,13 +47,13 @@ export default function ProfilePage() {
               <ChevronLeft className="w-6 h-6" />
             </Link>
 
-            <div className="flex items-center gap-2">
+            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
                 <Code2 className="w-5 h-5 text-white" />
               </div>
 
               <span className="text-xl text-white">CodeSync</span>
-            </div>
+            </Link>
           </div>
 
           <Link to="/dashboard">

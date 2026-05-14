@@ -144,15 +144,15 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-blue-950">
       <div className="flex">
         <aside className="w-64 border-r border-white/10 bg-gray-900/50 backdrop-blur-xl min-h-screen p-6 flex flex-col">
-          <div className="flex items-center gap-2 mb-8">
+          <Link to="/" className="flex items-center gap-2 mb-8 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
               <Code2 className="w-6 h-6 text-white" />
             </div>
 
-            <span className="text-xl text-white">
+            <span className="text-xl text-white font-bold tracking-tight">
               CodeSync
             </span>
-          </div>
+          </Link>
 
           <nav className="space-y-2">
             <button
@@ -263,7 +263,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-4 gap-6 mb-8">
               {stats.map((stat) => (
-                <Card key={stat.label} glass hover>
+                <Card key={stat.label} glass hover className="p-6">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-gray-400 text-sm mb-1">

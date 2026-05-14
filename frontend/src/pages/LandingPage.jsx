@@ -25,7 +25,7 @@ export default function LandingPage() {
       <nav className="border-b border-white/10 backdrop-blur-xl bg-gray-900/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
               <Code2 className="w-6 h-6 text-white" />
             </div>
@@ -33,7 +33,7 @@ export default function LandingPage() {
             <span className="text-xl text-white font-semibold">
               CodeSync
             </span>
-          </div>
+          </Link>
 
           <div className="flex items-center gap-4">
             
