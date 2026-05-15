@@ -91,6 +91,8 @@ export default function EditorWorkspace() {
   const [awareUsers, setAwareUsers] = useState([]);
   const [chatOpen, setChatOpen] = useState(true);
   const [isSyncing, setIsSyncing] = useState(true);
+  const [showPending, setShowPending] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const editorRef = useRef(null);
   const bindingRef = useRef(null);
@@ -397,7 +399,74 @@ export default function EditorWorkspace() {
           <code className="bg-zinc-800 px-2 py-1 rounded text-amber-200 text-sm font-mono">{roomId}</code>
         </div>
 
+        <Button variant="secondary" size="sm" onClick={copyLink} className="gap-2">
+            <Copy className="w-4 h-4" />
+            {copyOk ? 'Copied' : 'Invite'}
+          </Button>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setShowPending(!showPending)}
+          className="gap-2 relative"
+        >
+          <Users className="w-4 h-4" />
+
+          Requests
+
+          {pendingRequests.length > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-semibold">
+              {pendingRequests.length}
+            </span>
+          )}
+        </Button>
+
+        {showPending && (
+          <div className="absolute top-14 left-0 w-80 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50">
+
+            <div className="px-4 py-3 border-b border-zinc-800">
+              <h3 className="text-sm font-semibold text-white">
+                Pending Requests
+              </h3>
+            </div>
+
+            {pendingRequests.length === 0 ? (
+              <div className="p-4 text-sm text-zinc-400">
+                No pending requests
+              </div>
+            ) : (
+              pendingRequests.map((req) => (
+                <div
+                  key={req._id}
+                  className="p-4 border-b border-zinc-800"
+                >
+                  <p className="text-white text-sm font-medium">
+                    {req.userName}
+                  </p>
+
+                  <p className="text-zinc-500 text-xs mt-1">
+                    wants to join this room
+                  </p>
+                </div>
+              ))
+            )}
+
+          </div>
+        )}
+
         <div className="ml-auto flex items-center gap-3">
+          {!chatOpen && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setChatOpen(true)}
+              className="gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </Button>
+          )}
+          
           <select
             value={language}
             onChange={(e) => handleLanguageSelect(e.target.value)}
@@ -405,11 +474,6 @@ export default function EditorWorkspace() {
           >
             {LANGUAGE_OPTIONS.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
           </select>
-
-          <Button variant="secondary" size="sm" onClick={copyLink} className="gap-2">
-            <Copy className="w-4 h-4" />
-            {copyOk ? 'Copied' : 'Invite'}
-          </Button>
 
           <Button variant="primary" size="sm" onClick={handleSave} className="gap-2">
             <Save className="w-4 h-4" />

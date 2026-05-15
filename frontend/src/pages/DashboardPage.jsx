@@ -28,6 +28,7 @@ import {
   createRoom,
   joinRoom,
   deleteRoom,
+  fetchMyRequests,
 } from '../services/roomsApi';
 
 export default function DashboardPage() {
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const [recentRooms, setRecentRooms] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [showPending, setShowPending] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -44,10 +47,11 @@ export default function DashboardPage() {
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
-    if (user?.id) {
-      loadRooms();
-    }
-  }, [user]);
+  if (user?.id) {
+    loadRooms();
+    loadPendingRequests();
+  }
+}, [user?.id]);
 
   const loadRooms = async () => {
     try {
@@ -58,6 +62,18 @@ export default function DashboardPage() {
       console.error('Failed to load rooms:', err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPendingRequests = async () => {
+    try {
+      const requests = await fetchMyRequests(user.id);
+      setPendingRequests(requests);
+    } catch (err) {
+      console.error(
+        'Failed to load pending requests:',
+        err.message
+      );
     }
   };
 
@@ -203,17 +219,7 @@ export default function DashboardPage() {
               </button>
             </Link>
 
-            {/* <Button
-              variant="ghost"
-              className="w-full flex items-center gap-3 text-gray-300 px-4 py-3 rounded-xl hover:bg-white/5"
-              onClick={() =>
-                signOut(() => (window.location.href = '/'))
-              }
-            >
-              <LogOut className="w-5 h-5" />
 
-              Log out
-            </Button> */}
             
             <div className="p-4 border-t border-zinc-800">
               <button 
@@ -262,35 +268,139 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-4 gap-6 mb-8">
-              {stats.map((stat) => (
-                <Card key={stat.label} glass hover className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm mb-1">
-                        {stat.label}
-                      </p>
+            {stats.map((stat) => (
+              <Card
+                key={stat.label}
+                glass
+                hover
+                className="
+                  p-6
+                  group
+                  cursor-pointer
+                  transition-all
+                  duration-300
+                  border border-white/10
+                  backdrop-blur-xl
+                  hover:border-blue-500/40
+                  hover:bg-white/[0.07]
+                  hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]
+                  "
+                  >
+                {/* hover:-translate-y-2
+                hover:scale-[1.03]
+                hover:border-blue-500/40
+                hover:bg-gradient-to-br
+                hover:from-blue-500/10
+                hover:to-purple-500/10
+                hover:shadow-[0_0_40px_rgba(59,130,246,0.25)] */}
+                <div className="flex items-start justify-between">
 
-                      <p className="text-3xl text-white">
-                        {stat.value}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="
+                      text-gray-400
+                      text-sm
+                      mb-1
+                      transition-all
+                      duration-300
+                      // group-hover:text-blue-300
+                    ">
+                      {stat.label}
+                    </p>
 
-                    <div
-                      className={`w-10 h-10 rounded-lg bg-${stat.color}-500/10 flex items-center justify-center`}
-                    >
-                      <stat.icon
-                        className={`w-5 h-5 text-${stat.color}-400`}
-                      />
-                    </div>
+                    <p className="
+                      text-3xl
+                      text-white
+                      transition-all
+                      duration-300
+                      group-hover:text-white
+                      ">
+                      {/* group-hover:tracking-wide */}
+                      {stat.value}
+                    </p>
                   </div>
-                </Card>
-              ))}
-            </div>
 
-            <div className="mb-6">
-              <h2 className="text-xl text-white mb-4">
+                  <div
+                    className={`
+                      w-12 h-12 rounded-xl
+                      bg-${stat.color}-500/10
+                      flex items-center justify-center
+                      transition-all duration-300
+                      group-hover:shadow-lg
+                      `}
+                      // group-hover:bg-${stat.color}-500/20
+                      // group-hover:scale-125
+                      // group-hover:rotate-6
+                  >
+                    <stat.icon
+                      className={`
+                        w-6 h-6
+                        text-${stat.color}-400
+                        transition-all duration-300
+                        group-hover:scale-110
+                      `}
+                    />
+                  </div>
+
+                </div>
+              </Card>
+            ))}
+          </div>
+
+            <div className="mb-6 grid grid-cols-1 xl:grid-cols-3 gap-6 items-center">
+
+            <div className="xl:col-span-2">
+              <h2 className="text-2xl font-bold text-white">
                 Recent Rooms
               </h2>
+            </div>
+
+            <div className="flex justify-end">
+            <button
+              onClick={() => setShowPending(!showPending)}
+              className="inline-flex items-center justify-center gap-2 font-medium transition px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl"
+            >
+              Pending Requests
+            </button>
+          </div>
+
+          {showPending && (
+            <div className="absolute top-20 right-0 w-80 bg-[#111827] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50">
+
+              <div className="p-4 border-b border-white/10">
+                <h3 className="text-white text-lg font-semibold">
+                  Pending Requests
+                </h3>
+              </div>
+
+              {pendingRequests.length === 0 ? (
+                <div className="p-4 text-gray-400">
+                  No pending requests
+                </div>
+              ) : (
+                pendingRequests.map((req) => (
+                  <div
+                    key={req._id}
+                    className="p-4 border-b border-white/5 hover:bg-white/5 transition-all"
+                  >
+
+                    <p className="text-white font-medium">
+                      {req.roomName}
+                    </p>
+
+                    <p className="text-sm text-gray-400 mt-1">
+                      Requested by {req.userName}
+                    </p>
+
+                  </div>
+                ))
+              )}
+
+            </div>
+          )}
+
+
+          </div>
+            <div className="mb-6">
 
               <div className="grid gap-4">
                 {recentRooms.map((room) => (
@@ -365,6 +475,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
+            
           </div>
         </main>
       </div>

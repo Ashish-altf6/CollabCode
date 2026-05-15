@@ -2,10 +2,24 @@ function cn(...parts) {
   return parts.filter(Boolean).join(' ');
 }
 
-export function Card({ className, children, ...props }) {
+export function Card({
+  className,
+  children,
+  glass = false,
+  hover = false,
+  ...props
+}) {
   return (
     <div
-      className={cn('rounded-xl border border-zinc-800 bg-zinc-900/90 text-white shadow-lg', className)}
+      className={cn(
+        'rounded-xl border border-zinc-800 bg-zinc-900/90 text-white shadow-lg',
+        
+        glass && 'backdrop-blur-xl bg-white/5',
+
+        hover && 'hover:bg-zinc-800/80 transition-all duration-300',
+
+        className
+      )}
       {...props}
     >
       {children}

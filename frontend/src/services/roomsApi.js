@@ -19,3 +19,7 @@ export const deleteRoom = async (roomId, userId) => {
   const response = await api.delete(`/rooms/${roomId}?userId=${userId}`);
   return response.data;
 };
+
+export const fetchMyRequests = async () => {
+  return [];
+};
