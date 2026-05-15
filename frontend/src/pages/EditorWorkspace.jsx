@@ -101,7 +101,9 @@ export default function EditorWorkspace() {
 
   // Hydration from Firestore
   useEffect(() => {
-    if (!doc || !sources || !langs || !roomId) return;
+    // CRITICAL: Wait for doc to be synced with the server before hydration.
+    // This prevents duplicate content if two users join at the same time.
+    if (!synced || !doc || !sources || !langs || !roomId) return;
 
     if (hydratedRef.current) {
       setIsSyncing(false);
@@ -136,7 +138,23 @@ export default function EditorWorkspace() {
         setIsSyncing(false);
       }
     })();
-  }, [doc, sources, langs, roomId]);
+  }, [doc, sources, langs, roomId, synced]);
+
+  // Cleanup effect for binding and model
+  useEffect(() => {
+    return () => {
+      if (bindingRef.current) {
+        console.log('[Editor] Destroying binding');
+        bindingRef.current.destroy();
+        bindingRef.current = null;
+      }
+      if (modelRef.current) {
+        console.log('[Editor] Disposing model');
+        modelRef.current.dispose();
+        modelRef.current = null;
+      }
+    };
+  }, [roomId]);
 
   // Awareness (Collaborators)
   useEffect(() => {
@@ -183,7 +201,14 @@ export default function EditorWorkspace() {
     const lang = langs.get(ACTIVE_FILENAME) || language;
 
     const uri = monacoNs.Uri.parse(`file:///${roomId}/${ACTIVE_FILENAME}`);
-    let model = monacoNs.editor.getModel(uri) || monacoNs.editor.createModel(ytext.toString(), lang, uri);
+    
+    // Dispose old model if it exists to prevent stale state
+    const existingModel = monacoNs.editor.getModel(uri);
+    if (existingModel) {
+      existingModel.dispose();
+    }
+
+    const model = monacoNs.editor.createModel(ytext.toString(), lang, uri);
     
     modelRef.current = model;
     editor.setModel(model);
@@ -191,7 +216,7 @@ export default function EditorWorkspace() {
     const binding = new MonacoBinding(monacoNs, ytext, model, new Set([editor]), provider.awareness);
     bindingRef.current = binding;
     editorRef.current = editor;
-  }, [sources, provider, langs, language, doc, roomId]);
+  }, [provider, langs, language, doc, roomId]);
 
 
   const handleLanguageSelect = (next) => {
